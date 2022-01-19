@@ -22,16 +22,6 @@ class DataBaseSqlite:
         );
     """
 
-    select_users_posts = """
-    SELECT
-        users.id,
-        users.name,
-        posts.description
-    FROM
-        posts
-        INNER JOIN users ON users.id = posts.id
-    """
-
     update_message = """
     UPDATE
         messages
@@ -64,6 +54,8 @@ class DataBaseSqlite:
     ;"""
 
     fetchall_messages = 'SELECT * FROM messages where user_id = "{user_id}"'
+
+    fetch_user = 'SELECT * FROM users where id = "{user_id}"'
 
     def __init__(self):
         self.connection = sqlite3.connect("guest_book.db")
@@ -141,6 +133,14 @@ class GuestBook:
             menu += f'{index}- {item[1]} \n'
         print(menu)
 
+    @staticmethod
+    def show_all_messages(messages):
+        result = "ALL ENTRIES: \n"
+        for index, item in enumerate(messages, start=1):
+            user_texted = database_object.select_one_query(database_object.fetch_user.format(user_id=item[2]))
+            result += f'{index}- "{user_texted[1]} {user_texted[2]}" SAYS: {item[1]}\n'
+        print(result)
+
 
 if __name__ == "__main__":
     # make database connection and object
@@ -177,14 +177,15 @@ if __name__ == "__main__":
         print("1- ADD NEW MESSAGE ")
         print("2- EDIT MY MESSAGES ")
         print("3- DELETE MY MESSAGE ")
-        print("4- EXIT")
+        print("4- SHOW ALL ENTRIES")
+        print("5- EXIT")
         selected_menu = input(":")
         user = database_object.select_one_query(
             database_object.user_exist.format(
                 first_name=guest_book.guest_first_name, last_name=guest_book.guest_last_name))
         user_id = user[0]
-        if selected_menu not in ["1", "2", "3", "4"]:
-            print("PLEASE SELECT FROM MENU 1, 2, 3 OR 4!")
+        if selected_menu not in ["1", "2", "3", "4", "5"]:
+            print("PLEASE SELECT FROM MENU 1, 2, 3, 4 OR 5!")
             continue
         elif selected_menu == "1":
             message = guest_book.new_message("PLEASE SEND YOUR MESSAGE: ")
@@ -246,5 +247,13 @@ if __name__ == "__main__":
                 print("SOMETHING IS WRONG!")
 
         elif selected_menu == "4":
+            messages = database_object.select_query(database_object.fetchall_messages.format(user_id=user_id))
+            if not messages:
+                print('THERE IS NO ENTRIES ...!')
+                continue
+            guest_book.show_all_messages(messages)
+            continue
+
+        elif selected_menu == "5":
             print("BY BY")
             break
